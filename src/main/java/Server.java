@@ -18,9 +18,14 @@ public class Server {
         this.port = port;
     }
 
-    public void start() throws IOException {
+    public void start() {
 
-        ServerSocket serverSocket = new ServerSocket(port);
+        ServerSocket serverSocket = null;
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         while (true) {
             try (
@@ -54,21 +59,31 @@ public class Server {
                 final var length = Files.size(filePath);
 
                 validPath(out, filePath, mimeType, length);
-                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-
-    private static void invalidPath (BufferedOutputStream out) throws IOException {
-        out.write((
-                "HTTP/1.1 404 Not Found\r\n" +
-                        "Content-Length: 0\r\n" +
-                        "Connection: close\r\n" +
-                        "\r\n"
-        ).getBytes());
-        out.flush();
     }
 
-    private static void classicHtmlPath (BufferedOutputStream out, Path filePath, String mimeType) throws IOException {
+    private static void invalidPath(BufferedOutputStream out) {
+        try {
+            out.write((
+                    "HTTP/1.1 404 Not Found\r\n" +
+                            "Content-Length: 0\r\n" +
+                            "Connection: close\r\n" +
+                            "\r\n"
+            ).getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void classicHtmlPath(BufferedOutputStream out, Path filePath, String mimeType) throws IOException {
         final var template = Files.readString(filePath);
         final var content = template.replace(
                 "{time}",
@@ -85,15 +100,27 @@ public class Server {
         out.flush();
     }
 
-    private static void validPath (BufferedOutputStream out, Path filePath, String mimeType, long length) throws IOException {
-        out.write((
-                "HTTP/1.1 200 OK\r\n" +
-                        "Content-Type: " + mimeType + "\r\n" +
-                        "Content-Length: " + length + "\r\n" +
-                        "Connection: close\r\n" +
-                        "\r\n"
-        ).getBytes());
-        Files.copy(filePath, out);
-        out.flush();
+    private static void validPath(BufferedOutputStream out, Path filePath, String mimeType, long length) {
+        try {
+            out.write((
+                    "HTTP/1.1 200 OK\r\n" +
+                            "Content-Type: " + mimeType + "\r\n" +
+                            "Content-Length: " + length + "\r\n" +
+                            "Connection: close\r\n" +
+                            "\r\n"
+            ).getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            Files.copy(filePath, out);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
