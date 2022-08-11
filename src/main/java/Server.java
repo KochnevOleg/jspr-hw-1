@@ -3,33 +3,40 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
 
-    private int port;
     final List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
+    private final ExecutorService executorService;
 
-
-    public Server(int port) {
-        this.port = port;
+    public Server(int threads) {
+        this.executorService = Executors.newFixedThreadPool(threads);
     }
 
-    public void start() {
+    public void start(int port) {
 
-        ServerSocket serverSocket = null;
-        try {
-            serverSocket = new ServerSocket(port);
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+
+            while (true) {
+                final var socket = serverSocket.accept();
+                executorService.submit(() -> connect(socket));
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
+    public void connect (Socket socket){
         while (true) {
             try (
-                    final var socket = serverSocket.accept();
+                    socket;
                     final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     final var out = new BufferedOutputStream(socket.getOutputStream())
             ) {
